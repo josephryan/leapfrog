@@ -1,0 +1,230 @@
+#!perl
+
+# leapfrog - identify BLAST hits between two datasets by employing a third intermediate dataset
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Pod::Usage;
+use Data::Dumper;
+
+our $PROGRAM_NAME = 'leapfrog';
+our $VERSION = 0.02;
+our $AUTHOR  = 'Joseph F. Ryan <joseph.ryan@whitney.ufl.edu>';
+
+our $DEFAULT_EVAL = 0.01;
+
+MAIN: {
+    my $rh_opts = process_options();
+
+    my $rh_1v2_hits = get_hits($rh_opts->{'1v2'},$rh_opts);
+    my $rh_2v1_hits = get_hits($rh_opts->{'2v1'},$rh_opts);
+    my $rh_recip_1v2_hits = get_reciprocal($rh_1v2_hits,$rh_2v1_hits);
+
+    my $rh_2v3_hits = get_hits($rh_opts->{'2v3'},$rh_opts);
+    my $rh_3v2_hits = get_hits($rh_opts->{'3v2'},$rh_opts);
+    my $rh_recip_3v2_hits = get_reciprocal($rh_2v3_hits,$rh_3v2_hits);
+
+    my $rh_1v3_hits = get_hits($rh_opts->{'1v3'},$rh_opts);
+    my $rh_missing  = get_missing_hits($rh_recip_1v2_hits,$rh_1v3_hits);
+    my $rh_res = get_results($rh_recip_1v2_hits,$rh_recip_3v2_hits,$rh_missing);
+
+    print_results($rh_res,$rh_opts);
+}
+
+sub print_results {
+    my $rh_res = shift;
+    my $rh_opts = shift;
+    print "Query\tMid\tSubject\tQuery v Mid E-Val\tMid v Subject E-Val\n";
+    foreach my $key (keys %{$rh_res}) {
+        foreach my $ra_r (@{$rh_res->{$key}}) {
+            print "$key\t$ra_r->[0]\t$ra_r->[2]\t$ra_r->[1]\t$ra_r->[3]\n";
+        }
+    }
+}
+
+sub get_results {
+    my $rh_1v2_recip = shift;
+    my $rh_3v2_recip = shift;
+    my $rh_missing = shift;
+    my %hits = ();
+    my %seen = ();
+    foreach my $key (keys %{$rh_missing}) {
+        next unless ($rh_1v2_recip->{$key});
+        foreach my $rh_1 (@{$rh_1v2_recip->{$key}}) {
+            my $hit = $rh_1->{'hit'};
+            foreach my $rh_2 (@{$rh_3v2_recip->{$hit}}) {
+                next if ($seen{$key}->{$hit}->{$rh_2->{'hit'}});
+                push @{$hits{$key}}, [$hit,$rh_1->{'eval'},$rh_2->{'hit'},$rh_2->{'eval'}];
+                $seen{$key}->{$hit}->{$rh_2->{'hit'}}++;
+            }
+        }
+    }
+    return \%hits;
+}
+
+sub get_reciprocal {
+    my $rh_one = shift;
+    my $rh_two = shift;
+    my %recip = ();
+    my %seen = ();
+    my %evals = ();
+
+    foreach my $key (keys %{$rh_one}) {
+        foreach my $rh_a (@{$rh_one->{$key}}) {
+            next if ($seen{$key});
+            foreach my $rh_b (@{$rh_two->{$rh_a->{'hit'}}}) {
+                unless ($evals{$rh_a->{'hit'}}) {
+                    $evals{$rh_a->{'hit'}} = $rh_b->{'eval'};
+                }
+                next if ($rh_b->{'eval'} > $evals{$rh_a->{'hit'}});
+                if ($rh_b->{'hit'} eq $key) {
+                    push @{$recip{$key}}, {'eval' => $rh_a->{'eval'}, 
+                                           'hit'  => $rh_a->{'hit'}};
+                } 
+            }
+            $seen{$key} = 1;
+        }
+    }
+    return \%recip;
+}
+
+sub get_missing_hits {
+    my $rh_1v2 = shift;
+    my $rh_1v3 = shift;
+    my %missing = ();
+    foreach my $hit (keys %{$rh_1v2}) {
+        $missing{$hit}++ unless ($rh_1v3->{$hit});
+    }
+    return \%missing;
+}
+
+sub get_hits {
+    my $file = shift;
+    my $rh_opts = shift;
+    my %hits = ();
+    open IN, $file or die "cannot open $file:$!";
+    while (my $line = <IN>) {
+        my @fs = split /\t/, $line;
+        if ($fs[10] <= $rh_opts->{'eval'}) {
+            push @{$hits{$fs[0]}}, {'hit' => $fs[1], 'eval' => $fs[10]};
+        }
+    }
+    return \%hits;
+}
+
+sub process_options {
+    my $rh_opts = {};
+    my $opt_results = Getopt::Long::GetOptions(
+                              "version" => \$rh_opts->{'version'},
+                               "1v2=s" => \$rh_opts->{'1v2'},
+                               "2v1=s" => \$rh_opts->{'2v1'},
+                               "1v3=s" => \$rh_opts->{'1v3'},
+                               "2v3=s" => \$rh_opts->{'2v3'},
+                               "3v2=s" => \$rh_opts->{'3v2'},
+                               "eval=f" => \$rh_opts->{'eval'},
+                                 "help" => \$rh_opts->{'help'});
+    die "$VERSION\n" if ($rh_opts->{'version'});
+    pod2usage({-exitval => 0, -verbose => 2}) if $rh_opts->{'help'};
+    $rh_opts->{'eval'} = $DEFAULT_EVAL unless ($rh_opts->{'eval'});
+    unless ($rh_opts->{'1v2'} && $rh_opts->{'2v1'} && $rh_opts->{'1v3'} 
+            && $rh_opts->{'2v3'} && $rh_opts->{'3v2'}) {
+        warn "missing --1v2\n" unless ($rh_opts->{'1v2'});
+        warn "missing --2v1\n" unless ($rh_opts->{'2v1'});
+        warn "missing --1v3\n" unless ($rh_opts->{'1v3'});
+        warn "missing --2v3\n" unless ($rh_opts->{'2v3'});
+        warn "missing --3v2\n" unless ($rh_opts->{'3v2'});
+        usage();
+    }
+    return $rh_opts;
+}
+
+sub usage {
+    die "usage: $0 [--eval=EVALUECUTOFF] [--help] [--version] --1v2=TABBLAST --2v1=TABBLAST --1v3=TABBLAST --2v3=TABBLAST --3v2=TABBLAST\n";
+}
+
+__END__
+
+=head1 NAME
+
+B<leapfrog> - identify BLAST hits between two datasets by employing a third intermediate dataset
+
+=head1 AUTHOR
+
+Joseph F. Ryan <joseph.ryan@whitney.ufl.edu>
+
+=head1 SYNOPSIS
+
+leapfrog [--eval=EVALUECUTOFF] [--help] [--version] --1v2=TABBLAST --2v1=TABBLAST --1v3=TABBLAST --2v3=TABBLAST --3v2=TABBLAST
+
+=head1 DESCRIPTION
+
+This program will identify BLAST hits between two datasets (query and subject) by employing a third set (intermediate).  It was used originally to identify orthologs to human genes in fast evolving Platyhelminthes transcriptomes using the more slowly evolving transcriptome of Prostheceraeus vittatus
+
+=head1 BUGS
+
+Please report them to <joseph.ryan@whitney.ufl.edu>
+
+=head1 OPTIONS
+
+=over 2
+
+=item B<--eval>
+
+(default: .01)
+E-Value cutoff
+
+=item B<--1v2>
+
+BLAST output in tab-delimted format query sequences vs. intermediate
+
+=item B<--2v1>
+
+BLAST output in tab-delimted format intermediate sequences vs. query
+
+=item B<--1v3>
+
+BLAST output in tab-delimted format query sequences vs. subject
+
+=item B<--2v3>
+
+BLAST output in tab-delimted format intermediate sequences vs. subject
+
+=item B<--3v2>
+
+BLAST output in tab-delimted format subject sequences vs. intermediate
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (C) 2015 Joseph F. Ryan
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=cut
