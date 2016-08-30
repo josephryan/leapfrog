@@ -1,0 +1,7 @@
+biogrid.pl VERSION 0.02
+Random seed: 42
+Performing a one-tailed test
+100000 random counts generated
+identified 71 interactions in Smed
+identified 19 random datasets >= 71
+P-value: 0.00019
