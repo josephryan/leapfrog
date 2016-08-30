@@ -2,7 +2,7 @@
 
 ## DESCRIPTION
 
-identify BLAST hits between two datasets by employing a third intermediate dataset
+identify BLAST hits between two datasets by employing a third intermediate dataset. These hits are designated as hidden orthologs. The scripts directory includes scripts used in the analysis of these hidden orthologs.
 
 ## AVAILABILITY
 
