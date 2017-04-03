@@ -1,0 +1,22 @@
+Query	Mid	Subject	Query v Mid E-Val	Mid v Subject E-Val
+AIFM1	comp268262_c0_seq1	comp21999_c0_seq1	4e-51	2e-11
+HSPB2	comp255399_c0_seq1	comp129322_c0_seq1	1e-09	3e-05
+AKAP7	comp253241_c0_seq1	comp11853_c0_seq1	1e-17	2e-10
+NGLY1	comp293264_c0_seq1	comp13843_c1_seq2	4e-119	1e-13
+GK	comp118352_c0_seq1	comp13973_c0_seq1	0.0	8e-04
+MRPL32	comp287646_c0_seq1	comp19168_c0_seq1	2e-07	4e-07
+XPNPEP1	comp265536_c0_seq1	comp14365_c0_seq1	2e-157	1e-07
+TNNI1	comp258888_c1_seq6	comp15050_c1_seq2	1e-12	3e-07
+NDUFB5	comp104104_c0_seq1	comp8235_c0_seq1	2e-22	1e-04
+EMC4	comp106012_c0_seq1	comp12979_c0_seq1	4e-20	3e-09
+PDE12	comp191242_c0_seq1	comp7590_c0_seq1	7e-34	7e-06
+PAPD4	comp234807_c0_seq2	comp26776_c0_seq1	6e-44	5e-10
+TPRA1	comp303043_c0_seq1	comp28769_c0_seq1	5e-46	3e-07
+MRPL18	comp105316_c0_seq1	comp13545_c0_seq1	7e-35	5e-05
+C9orf85	comp291180_c0_seq1	comp10196_c0_seq1	1e-21	1e-11
+KIN	comp271356_c0_seq1	comp12058_c0_seq1	3e-89	7e-06
+SYS1	comp263953_c0_seq1	comp13748_c0_seq1	6e-13	1e-13
+TMEM131	comp270513_c0_seq4	comp8570_c0_seq1	2e-145	7e-04
+SSR1	comp231166_c0_seq1	comp15017_c1_seq1	2e-19	8e-24
+D2HGDH	comp246872_c0_seq1	comp24151_c0_seq1	5e-173	8e-04
+ADTRP	comp103840_c0_seq1	comp13610_c0_seq1	1e-26	3e-10

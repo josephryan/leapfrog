@@ -1,0 +1,15 @@
+# problems/questions contact joseph.ryan@whitney.ufl.edu
+
+the cmp_lens.pl script requires the outputs of our leapfrog runs (leaps directory) and the FASTA files for each of the flatworm transcriptomes.
+These FASTA files can be downloaded here:
+    http://ryanlab.whitney.ufl.edu/downloads/Martin_duran_et_al_2017_transcriptomes.tar.gz
+
+The following commands should work on most systems (run from w/in this directory):
+
+    lwp-download http://ryanlab.whitney.ufl.edu/downloads/Martin_duran_et_al_2017_transcriptomes.tar.gz
+    gzip -dc Martin_duran_et_al_2017_transcriptomes.tar.gz | tar -xvf -
+    perl cmp_lens.pl
+
+# The output should match: cmp_lens.out
+# cmp_lens.out is Supplementary Table 7
+
